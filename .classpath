@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
+	<classpathentry kind="lib" path="C:/Users/tmorello/WebScraperWorkspace/BuyMa/resources/2captcha_api.jar"/>
+	<classpathentry kind="lib" path="C:/Users/tmorello/WebScraperWorkspace/BuyMa/resources/htmlunit-2.37.0-OSGi.jar"/>
+	<classpathentry kind="lib" path="C:/Users/tmorello/WebScraperWorkspace/BuyMa/resources/opencsv-5.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/tmorello/WebScraperWorkspace/BuyMa/resources/sqlite-jdbc-3.30.1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Databases_Utils"/>
+	<classpathentry kind="lib" path="C:/Users/tmorello/WebScraperWorkspace/BuyMa/resources/fuzzywuzzy-1.2.0.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
