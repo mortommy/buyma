@@ -1,23 +1,25 @@
 package com.akabana.buyma;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.ResultSet;
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -27,8 +29,6 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 import com.akabana.db_utils.*;
-
-import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 public class ManageBuyMa {
 	
@@ -1447,6 +1447,7 @@ public class ManageBuyMa {
 			if(logger!=null)
 				logger.log(Level.INFO, "Write items record to csv file: "+destinationPathNameItems);
 			CSVWriter writer = new CSVWriter(new FileWriter(destinationPathNameItems));
+						
 			writer.writeAll(rs, true, true, true);
 			writer.close();
 			
@@ -1744,15 +1745,119 @@ public class ManageBuyMa {
 	}
 	
 	/***
+	 * The method loads csv files zipped in zip file. It looks for the most recent zip file in the folder.
+	 * @param zipFilePath folder where to look for the zip file
+	 * @param separator csv separator character
+	 * @param truncate if true the destination tables will be truncated
+	 * @param haveHeader if true the csv files have the header as firts row
+	 * @param archiveFiles if true the zip file will be moved in a subfolder named processed
+	 * @throws Exception
+	 */
+	public void loadCurrentBuyMafromZip(String zipFilePath, char separator, boolean truncate, boolean haveHeader, boolean archiveFiles) throws Exception
+	{
+		try
+		{
+			if(logger!=null)
+				logger.log(Level.FINE, "Start loadCurrentBuyMafromZip method.");
+			
+			//look for all zips in folder
+			File path = new File(zipFilePath);
+			FilenameFilter zips = new FilenameFilter() { 
+				  
+                public boolean accept(File f, String name) 
+                { 
+                    return name.endsWith(".zip");
+                } 
+            }; 
+           	File[] files = path.listFiles(zips);
+           	if(files.length == 0)
+           	{
+           		if(logger!=null)
+    				logger.log(Level.WARNING, "No zip files found!");
+           		return;
+           	}
+            if(logger!=null)
+				logger.log(Level.INFO, "Found "+files.length+ " zip files in folder "+zipFilePath);
+            Arrays.sort(files, new Comparator<File>() {
+                public int compare(File f1, File f2) {
+                    return Long.compare(f1.lastModified(), f2.lastModified());
+                }
+            });
+            if(logger!=null)
+				logger.log(Level.INFO, "Choosed the most recent one: "+files[0].getName());
+            
+            if(logger!=null)
+				logger.log(Level.INFO, "Unzip the file: "+files[0].getName()+" in the same directory.");
+            
+			File zipFile = files[0];
+			unzip(zipFile.getPath(),zipFile.getParent());
+			
+			loadCurrentBuyMaFromCSV(zipFilePath+"\\items.utf8.csv", zipFilePath+"\\colorsizes.utf8.csv", separator, truncate, haveHeader, false);
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Delete unziped cvs files.");
+			
+			FilenameFilter csvs = new FilenameFilter() { 
+				  
+                public boolean accept(File f, String name) 
+                { 
+                    return name.endsWith(".csv");
+                } 
+            }; 
+           	File[] csvFiles = path.listFiles(csvs);
+           	Path pfile;
+           	for(int i = 0; i < csvFiles.length; i++)
+           	{
+           		pfile = Paths.get(csvFiles[i].getPath());
+           		Files.delete(pfile);
+           	}
+           	
+           	if(archiveFiles)
+           	{
+           		if(logger!=null)
+					logger.log(Level.INFO, "Move zip file to processed subfolder.");
+				
+				File processedFolder = new File(files[0].getParent()+"\\processed");
+				if(!processedFolder.exists())
+					processedFolder.mkdir();
+				
+				// append TimeStamp
+				
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+				LocalDateTime date =  LocalDateTime.now();
+				Path destination;				
+				int extensionIndex = (zipFile.getName()).indexOf(".zip");
+				if(extensionIndex!=-1)
+					destination = Paths.get(zipFile.getParent()+"\\processed\\"+(zipFile.getName()).substring(0,extensionIndex)+"_"+date.format(formatter)+".zip");
+				else
+					destination  = Paths.get(zipFile.getParent()+"\\processed\\"+zipFile.getName()+"_"+date.format(formatter)+".zip"); 
+				Path source = Paths.get(zipFile.getPath());
+				Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+				
+				if(logger!=null)
+					logger.log(Level.INFO, "zip file moved.");	
+           	}
+			
+			if(logger!=null)
+				logger.log(Level.FINE, "End loadCurrentBuyMafromZip method.");
+		}
+		catch (Exception e) 
+		{
+			throw new Exception(e.getMessage());
+		}
+	}
+	
+	/***
 	 * Load into BUYMA_ITEMS and BUYMA_COLOR_SIZES data from csv files
 	 * @param originPathNameItems path and name of csv file items
 	 * @param originPathNameColorSizes path and name of csv file colorsizes
 	 * @param separator
 	 * @param truncate if true data are deleted in the destinations tables before to load the new one
 	 * @param haveHeader if true the first line won't be considered
+	 * @param archiveFilse if true moves the file to a subfolder named processed
 	 * @throws Exception 
 	 */
-	public void loadCurrentBuyMaFromCSV(String originPathNameItems, String originPathNameColorSizes, char separator, boolean truncate, boolean haveHeader) throws Exception
+	public void loadCurrentBuyMaFromCSV(String originPathNameItems, String originPathNameColorSizes, char separator, boolean truncate, boolean haveHeader, boolean archiveFiles) throws Exception
 	{
 		String statement = "";
 		try
@@ -1771,8 +1876,8 @@ public class ManageBuyMa {
 			if (!f_items.exists())
 			{
 				if(logger!=null)
-					logger.log(Level.SEVERE, "file "+originPathNameItems+" not exists");
-				throw new Exception("Items origin file not exists");
+					logger.log(Level.WARNING, "file "+originPathNameItems+" not exists");
+				return;
 			}
 				
 			if(logger!=null)
@@ -1781,8 +1886,8 @@ public class ManageBuyMa {
 			if (!f_color_sizes.exists())
 			{
 				if(logger!=null)
-					logger.log(Level.SEVERE, "file "+originPathNameColorSizes+" not exists");
-				throw new Exception("Color sizes origin file not exists");
+					logger.log(Level.WARNING, "file "+originPathNameColorSizes+" not exists");
+				return;
 			}	
 						
 			//check if destination tables exist
@@ -2242,6 +2347,40 @@ public class ManageBuyMa {
 			csvReader.close();
 			reader.close();
 			
+			if(archiveFiles)
+			{
+				if(logger!=null)
+					logger.log(Level.INFO, "Move files to processed subfolder.");
+				
+				File processedFolder = new File(f_items.getParent()+"\\processed");
+				if(!processedFolder.exists())
+					processedFolder.mkdir();
+				
+				// append TimeStamp
+				
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+				LocalDateTime date =  LocalDateTime.now();
+				Path destination;				
+				int extensionIndex = (f_items.getName()).indexOf(".csv");
+				if(extensionIndex!=-1)
+					destination = Paths.get(f_items.getParent()+"\\processed\\"+(f_items.getName()).substring(0,extensionIndex)+"_"+date.format(formatter)+".csv");
+				else
+					destination  = Paths.get(f_items.getParent()+"\\processed\\"+f_items.getName()+"_"+date.format(formatter)+".csv"); 
+				Path source = Paths.get(f_items.getPath());
+				Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+				
+				extensionIndex = (f_color_sizes.getName()).indexOf(".csv");
+				if(extensionIndex!=-1)
+					destination = Paths.get(f_color_sizes.getParent()+"\\processed\\"+(f_color_sizes.getName()).substring(0,extensionIndex)+"_"+date.format(formatter)+".csv");
+				else
+					destination  = Paths.get(f_items.getParent()+"\\processed\\"+f_color_sizes.getName()+"_"+date.format(formatter)+".csv"); 
+				source = Paths.get(f_color_sizes.getPath());
+				Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+				
+				if(logger!=null)
+					logger.log(Level.INFO, "csv files moved.");					
+			}
+			
 			if(logger!=null)
 				logger.log(Level.FINE, "End loadCurrentBuyMaFromCSV method.");			
 		}
@@ -2257,4 +2396,62 @@ public class ManageBuyMa {
     		}
         }
 	}//loadCurrentBuyMaFromCSV
+	
+	protected void unzip(String zipFilePathName, String destDir) throws Exception {
+		ZipInputStream zis = null;
+		FileInputStream fis = null;
+		try
+		{
+			if(logger!=null)
+				logger.log(Level.FINE, "Start unzip method.");
+			
+	        File dir = new File(destDir);
+	        // create output directory if it doesn't exist
+	        if(!dir.exists()) 
+	        	dir.mkdirs();
+	        
+	        //buffer for read and write data to file
+	        byte[] buffer = new byte[1024];
+        
+            fis = new FileInputStream(zipFilePathName);
+            zis = new ZipInputStream(fis);
+            ZipEntry ze = zis.getNextEntry();
+            while(ze != null)
+            {
+                String fileName = ze.getName();
+                File newFile = new File(destDir + File.separator + fileName);
+                logger.log(Level.INFO,"Unzipping file to "+newFile.getAbsolutePath());
+                //create directories for sub directories in zip
+                new File(newFile.getParent()).mkdirs();
+                FileOutputStream fos = new FileOutputStream(newFile);
+                int len;
+                while ((len = zis.read(buffer)) > 0) 
+                {
+                	fos.write(buffer, 0, len);
+                }
+                fos.close();
+                //close this ZipEntry
+                zis.closeEntry();
+                ze = zis.getNextEntry();
+            }
+            //close last ZipEntry
+            zis.closeEntry();
+            zis.close();
+            fis.close();
+            
+            if(logger!=null)
+				logger.log(Level.FINE, "End unzip method.");
+        } 
+        catch (Exception e) 
+		{
+        	throw new Exception(e.getMessage());
+        }     
+		finally 
+    	{
+    		if(zis != null)
+    			zis.close();
+    		if(fis != null)
+    			fis.close();
+        }
+    }
 }//class

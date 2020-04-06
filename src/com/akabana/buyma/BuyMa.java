@@ -21,12 +21,12 @@ public class BuyMa {
 	    
 	    String origin_csv_items_file = "";
 	    String origin_csv_color_sizes_file = "";
-	    /*
+	    
 	    String buyma_web_site = "";
 	    String buyma_login_page = "";
 	    String buyma_username = "";
 	    String buyma_password = "";
-	    */
+	    
 	   	    
 	    BuyMaProperties bmp = null;	   
 	    ManageBuyMa mbm = null;
@@ -42,12 +42,12 @@ public class BuyMa {
 	    	log_level = bmp.getLogFileLevel();
 	    	source_to_process = bmp.getSourceToProcess();
 	    	
-	    	/*
+	    	
 	    	buyma_web_site = bmp.getBuyMaWebSite();
 	    	buyma_login_page = bmp.getBuyMaLoginPage();
 	    	buyma_username = bmp.getBuyMaUsername();
 	    	buyma_password = bmp.getBuyMaPassword();
-	    	*/
+	    	
 		}
 		catch (Exception e1)
 		{
@@ -78,18 +78,19 @@ public class BuyMa {
 		{
 			if(source_to_process.contains("antonioli"))
 			{
+				
 				ManageAntonioli msa = null;
 				
-				//logger.log(Level.INFO, "Create the object to work with the Antonioli staging data.");
-				//msa = new ManageAntonioli(bmp.getAntonioliSourceDb(), bmp.getBuyMaDb(), logger);
+				logger.log(Level.INFO, "Create the object to work with the Antonioli staging data.");
+				msa = new ManageAntonioli(bmp.getAntonioliSourceDb(), bmp.getBuyMaDb(), logger);
 				//logger.log(Level.INFO, "Move data from Antonioli download DB to the related Antonioli staging table of DB Buyma .");
 				//msa.loadStagingFromDB();
 				//logger.log(Level.INFO, "Move data from Antonioli staging table to consolidated Antonioli table of DB Buyma .");
 				//msa.loadConsolidatedTable();				
 				
 				
-				//logger.log(Level.INFO, "Create the object to work with Antonioli consolidated data.");
-				//7mbm = new ManageBuyMa(bmp.getBuyMaDb(), logger);
+				logger.log(Level.INFO, "Create the object to work with Antonioli consolidated data.");
+				mbm = new ManageBuyMa(bmp.getBuyMaDb(), logger);
 								
 				//logger.log(Level.INFO, "Load current data available in buyma from csv files.");
 				//mbm.loadCurrentBuyMaFromCSV(bmp.getOriginItemsCsvFile(), bmp.getOriginColorSizesCsvFile(), ',', true, true);
@@ -102,11 +103,13 @@ public class BuyMa {
 				//mbm.generateBuyMaCsv(bmp.getDestinationItemsCsvFile(), bmp.getDestinationColorSizesCsvFile(), true);
 				//logger.log(Level.INFO, "Generate zip with the csv files.");
 				//mbm.generateBuyMaZipCsv(bmp.getDestinationZipFile(), true);
+				//mbm.loadCurrentBuyMafromZip(bmp.getOriginZipFiles(), ',', true, true, true);
 			}
-			/*
+			
 			BuyMaWeb bmw = new BuyMaWeb(buyma_web_site,logger);
-			HtmlPage page = bmw.BuyMaLogin2(buyma_login_page, buyma_username, buyma_password);
-			*/
+			HtmlPage page = bmw.BuyMaLogin(buyma_login_page, buyma_username, buyma_password);
+			
+			
 		}
 		catch (Exception e1)
 		{

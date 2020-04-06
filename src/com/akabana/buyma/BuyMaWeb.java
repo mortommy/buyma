@@ -22,7 +22,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.NameValuePair;
 
 import java.net.URL;
-import com.twocaptcha.api.ProxyType;
 import com.twocaptcha.api.TwoCaptchaService;
 
 public class BuyMaWeb {
@@ -65,7 +64,9 @@ public class BuyMaWeb {
 		{
 			if(logger!=null)
 				logger.log(Level.INFO, "Open the web page: "+webSiteLink+loginPage);
-			webClient = StartWebBrowser();
+			 // disable caching
+	        webClient = StartWebBrowser();
+	        
 			//webClient.getOptions().setJavaScriptEnabled(false);
 			page = (HtmlPage) webClient.getPage(webSiteLink+loginPage);
 			webClient.waitForBackgroundJavaScript(20000);
@@ -81,7 +82,7 @@ public class BuyMaWeb {
 			requestSettings.setAdditionalHeader("Content-Type", "text/html; charset=utf-8");
 			requestSettings.setAdditionalHeader("Cache-Control", "no-cache");
 			requestSettings.setAdditionalHeader("Pragma", "no-cache");
-			requestSettings.setAdditionalHeader("Origin", "webSiteLink+loginPage");
+			requestSettings.setAdditionalHeader("Origin", webSiteLink+loginPage);
 			requestSettings.setAdditionalHeader("Content-Encoding", "gzip");
 			
 			HtmlForm form = page.getFormByName("formlogin");
@@ -143,19 +144,20 @@ public class BuyMaWeb {
 			if(logger!=null)
 				logger.log(Level.INFO, "Open the web page: "+webSiteLink+loginPage);
 			webClient = StartWebBrowser();
+			//website redirects to the same page once you click on the checkbox, so one must disable HtmlUnit caching
+	        webClient.getCache().setMaxSize(0);
 			//webClient.getOptions().setJavaScriptEnabled(false);
 			page = (HtmlPage) webClient.getPage(webSiteLink+loginPage);
 			webClient.waitForBackgroundJavaScript(20000);
 			HtmlForm form = page.getFormByName("formlogin");
 			
+			/*
 			BufferedWriter writer = new BufferedWriter(new FileWriter("c:\\before_login_buymapage.html"));
 			writer.write(page.asXml());		     
 		    writer.close();
-		    
+		    */
 			// Enter login and passwd
-			TimeUnit.SECONDS.sleep(5);
-		    form.getInputByName("txtLoginId").type(username);
-		    TimeUnit.SECONDS.sleep(1);
+			form.getInputByName("txtLoginId").type(username);
 		    form.getInputByName("txtLoginPass").type(password);
 		    		    
 		    TwoCaptchaService service = new TwoCaptchaService(apiKey, googleKey, webSiteLink+loginPage);
@@ -164,11 +166,13 @@ public class BuyMaWeb {
 		    // Click "Sign In" button
 		    if(logger!=null)
 				logger.log(Level.INFO, "Try to log in");
-		    HtmlPage page2 = (HtmlPage)form.getInputByValue("ログイン").click();
-		    		    
-		    webClient.waitForBackgroundJavaScript(120000);
-		    
-		    writer = new BufferedWriter(new FileWriter("c:\\after_login_buymapage.html"));
+		    webClient.getOptions().setJavaScriptEnabled(false);
+		    form.getInputByValue("ログイン").click();
+		    		   
+	        
+	        HtmlPage  page2 = (HtmlPage) webClient.getTopLevelWindows().get(0).getEnclosedPage();
+	        
+	        BufferedWriter writer = new BufferedWriter(new FileWriter("c:\\after_login_buymapage.html"));
 			writer.write(page2.asXml());		     
 		    writer.close();
 		    

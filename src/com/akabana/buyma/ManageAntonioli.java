@@ -1,6 +1,5 @@
 package com.akabana.buyma;
 
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -8,7 +7,6 @@ import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1426,9 +1424,9 @@ public class ManageAntonioli extends ManageVendor
 				logger.log(Level.FINE, "Retreive all brands and store in list.");
 			sqlStatement = "SELECT * FROM BUYMA_BRAND_ID;";
 			ResultSet brandsRs = destinationSqlLiteDB.executeSelect(sqlStatement);
-			List<String> brandsCode = new ArrayList();
-			List<String> brandsDesc = new ArrayList();
-			List<String> brandsDescJP = new ArrayList();
+			List<String> brandsCode = new ArrayList<String>();
+			List<String> brandsDesc = new ArrayList<String>();
+			List<String> brandsDescJP = new ArrayList<String>();
 			while(brandsRs.next())
 			{
 				brandsCode.add(brandsRs.getString("ブランドＩＤ"));
@@ -1448,7 +1446,23 @@ public class ManageAntonioli extends ManageVendor
 					
 					//new item found, check if it is processable
 					if(logger!=null)
-						logger.log(Level.FINE, "Start to process the item "+rs.getString("ITEM_SKU"));				
+						logger.log(Level.FINE, "Start to process the item "+rs.getString("ITEM_SKU"));		
+					
+					//check size
+					if(rs.getString("ITEM_HIERARCHY2").equals("SIZE (JEANS)"))
+					{
+						if(logger!=null)					
+							logger.log(Level.WARNING, "Size Jeans, not covered, the item will be marked as unprocessable.");
+						sqlStatement = "UPDATE ANTONIOLI "+
+								"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
+								"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
+								"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
+						if(logger!=null)
+							logger.log(Level.INFO, "Update the record into the tabel ANTONIOLI as unprocessable.");
+						destinationSqlLiteDB.executeUpdate(sqlStatement);
+						continue;
+					}	
 					
 					//BRAND
 					if(logger!=null)
@@ -1511,7 +1525,7 @@ public class ManageAntonioli extends ManageVendor
 							sqlStatement = "UPDATE ANTONIOLI "+
 									"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
 									"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
-									"AND ITEM_SKU="+rs.getString("ITEM_SKU")+" "+
+									"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
 									"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
 							if(logger!=null)
 								logger.log(Level.INFO, "Update the record into the tabel ANTONIOLI as unprocessable.");
@@ -1597,7 +1611,7 @@ public class ManageAntonioli extends ManageVendor
 						sqlStatement = "UPDATE ANTONIOLI "+
 								"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
 								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
-								"AND ITEM_SKU="+rs.getString("ITEM_SKU")+" "+
+								"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
 								"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
 						if(logger!=null)
 							logger.log(Level.INFO, "Update the record into the tabel ANTONIOLI as unprocessable.");
@@ -1871,6 +1885,8 @@ public class ManageAntonioli extends ManageVendor
 					destinationSqlLiteDB.executeUpdate(sqlStatement);
 				}//new item - header			
 				
+				candidateSizeDesc = "";
+				candidateSize = "";
 				//look for size code
 				if(rs.getString("ITEM_HIERARCHY2").equals("Size (UNI)"))
 				{
@@ -1879,7 +1895,7 @@ public class ManageAntonioli extends ManageVendor
 				}
 				else
 				{
-					candidateSizeDesc = rs.getString("ITEM_SIZE");
+					
 					String g = (rs.getString("ITEM_GENDER")=="W") ? "WOMEN" : "MEN";
 					sqlStatement = ""+
 							"SELECT DISTINCT BUYMA_SIZE "+
@@ -1897,6 +1913,7 @@ public class ManageAntonioli extends ManageVendor
 					while(size.next())
 					{
 						candidateSize = size.getString("BUYMA_SIZE");
+						candidateSizeDesc = size.getString("BUYMA_SIZE_DISPLAY");
 					}
 				}//else			
 				

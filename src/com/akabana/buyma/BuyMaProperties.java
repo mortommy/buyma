@@ -16,6 +16,7 @@ public class BuyMaProperties
 	
 	protected String antonioliSourceDb = "";	
 	
+	protected String origin_files_zip = "";
 	protected String origin_items_csv = "";
 	protected String origin_color_sizes_csv = "";
 	protected String destination_items_csv = "";
@@ -65,6 +66,7 @@ public class BuyMaProperties
 		this.antonioliSourceDb = prop.getProperty("antonioli_source_DB");
 		this.buyma_DB = prop.getProperty("buyma_DB");
 		
+		this.origin_files_zip = prop.getProperty("origin_files_zip");
 		this.origin_items_csv = prop.getProperty("origin_items_csv");
 		this.origin_color_sizes_csv = prop.getProperty("origin_color_sizes_csv");
 		
@@ -112,6 +114,11 @@ public class BuyMaProperties
 	public String getBuyMaDb()
 	{
 		return this.buyma_DB;
+	}
+	
+	public String getOriginZipFiles()
+	{
+		return this.origin_files_zip;
 	}
 	
 	public String getOriginItemsCsvFile()
