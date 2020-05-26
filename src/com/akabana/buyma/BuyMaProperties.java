@@ -15,6 +15,7 @@ public class BuyMaProperties
 	protected String source_to_process = "";
 	
 	protected String antonioliSourceDb = "";	
+	protected String data_load_mode = "0";
 	
 	protected String origin_files_zip = "";
 	protected String origin_items_csv = "";
@@ -25,8 +26,12 @@ public class BuyMaProperties
 	protected String buyma_DB = "";	
 	protected String buyma_web_site = "";
 	protected String buyma_login_page = "";
+	protected String buyma_downup_load_page = "";
+	protected String buyma_active_items_page = "";
 	protected String buyma_username = "";
 	protected String buyma_password = "";
+	protected String chromeDriverPathName = "";
+	protected String chromeUserDataPath = "";
 	
 	protected Properties prop;
 	protected FileInputStream inputStream;
@@ -65,6 +70,7 @@ public class BuyMaProperties
 		
 		this.antonioliSourceDb = prop.getProperty("antonioli_source_DB");
 		this.buyma_DB = prop.getProperty("buyma_DB");
+		this.data_load_mode = prop.getProperty("data_load_mode");
 		
 		this.origin_files_zip = prop.getProperty("origin_files_zip");
 		this.origin_items_csv = prop.getProperty("origin_items_csv");
@@ -78,6 +84,11 @@ public class BuyMaProperties
 		this.buyma_login_page  = prop.getProperty("BuyMa_Login_Page");
 		this.buyma_username  = prop.getProperty("BuyMa_Login_Username");
 		this.buyma_password  = prop.getProperty("BuyMa_Login_Password");
+		this.buyma_downup_load_page = prop.getProperty("BuyMa_DownUp_Load_Page");
+		this.buyma_active_items_page = prop.getProperty("Buyma_active_items_Page");
+		
+		this.chromeDriverPathName = prop.getProperty("ChromeDriverPathName");
+		this.chromeUserDataPath = prop.getProperty("ChromeUserDataPath");
 	}//loadProperties
 	
 	
@@ -116,6 +127,11 @@ public class BuyMaProperties
 		return this.buyma_DB;
 	}
 	
+	public String getDataLoadMode()
+	{
+		return this.data_load_mode;
+	}
+		
 	public String getOriginZipFiles()
 	{
 		return this.origin_files_zip;
@@ -156,6 +172,11 @@ public class BuyMaProperties
 		return this.buyma_login_page;
 	}
 	
+	public String getBuyMaActiveItemsPage()
+	{
+		return this.buyma_active_items_page;
+	}
+	
 	public String getBuyMaUsername()
 	{
 		return this.buyma_username;
@@ -166,4 +187,18 @@ public class BuyMaProperties
 		return this.buyma_password;
 	}
 	
+	public String getBuyMaDownUpLoadPage()
+	{
+		return this.buyma_downup_load_page;
+	}
+	
+	public String getChromeDriverPathName()
+	{
+		return this.chromeDriverPathName;
+	}
+	
+	public String getChromeUserPath()
+	{
+		return this.chromeUserDataPath;
+	}
 }//class

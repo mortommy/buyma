@@ -1,18 +1,35 @@
 package com.akabana.buyma;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+/*
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+*/
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.Select;
+
+/*
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.History;
 import com.gargoylesoftware.htmlunit.HttpMethod;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
+import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
 import com.gargoylesoftware.htmlunit.html.Html;
@@ -23,259 +40,286 @@ import com.gargoylesoftware.htmlunit.util.NameValuePair;
 
 import java.net.URL;
 import com.twocaptcha.api.TwoCaptchaService;
-
+*/
 public class BuyMaWeb {
 	
-	private String webSiteLink;
-	private Logger logger;
+	private String webSiteLink = "";
+	private Logger logger = null;
+	private String chromeDriverPathName = "";
+	private String chromeUserDataPath = "";
+	private String downloadFilesPath = "";
+	private WebDriver driver = null;
 	
-	String apiKey = "e59748eb3b5c6c8df318c1058a0174bf";
-	String googleKey = "6Le50LcUAAAAALVbLvJ_Oq7brlxJqcowAlwlw1CK";
+	//String apiKey = "e59748eb3b5c6c8df318c1058a0174bf";
+	//String googleKey = "6Le50LcUAAAAALVbLvJ_Oq7brlxJqcowAlwlw1CK";
 	
-	public BuyMaWeb(String webSiteLink)
+	public BuyMaWeb(String webSiteLink, String chromeDriverPathName)
 	{
 		this.webSiteLink = webSiteLink;
+		this.chromeDriverPathName = chromeDriverPathName;
 	}
 	
-	public BuyMaWeb(String webSiteLink, Logger logger)
+	public BuyMaWeb(String webSiteLink, String chromeDriverPathName, String chromeUserDataPath)
 	{
-		this(webSiteLink);
+		this(webSiteLink, chromeDriverPathName);
+		this.chromeUserDataPath = chromeUserDataPath;
+	}
+	
+	public BuyMaWeb(String webSiteLink, String chromeDriverPathName, Logger logger)
+	{
+		this(webSiteLink, chromeDriverPathName);
 		this.logger = logger;
 	}
 	
-	/***
-	 * Login to the website
-	 * @param loginPage page relative url, will be added to the webSiteLink
-	 * @param username
-	 * @param password
-	 * @return
-	 * @throws Exception 
-	 */
-	public HtmlPage BuyMaLogin2(String loginPage, String username, String password) throws Exception
+	public BuyMaWeb(String webSiteLink, String chromeDriverPathName, String chromeUserDataPath, Logger logger)
 	{
-		WebClient webClient = null;
-		HtmlPage page = null;
-		WebRequest requestSettings = null;
-		java.net.URL url = new URL("https://www.buyma.com/login/auth/");
+		this(webSiteLink, chromeDriverPathName, chromeUserDataPath);
+		this.logger = logger;
+	}	
 		
-		if(logger!=null)
-			logger.log(Level.FINE, "Start buyMaLogin2 method");
-		try
-		{
-			if(logger!=null)
-				logger.log(Level.INFO, "Open the web page: "+webSiteLink+loginPage);
-			 // disable caching
-	        webClient = StartWebBrowser();
-	        
-			//webClient.getOptions().setJavaScriptEnabled(false);
-			page = (HtmlPage) webClient.getPage(webSiteLink+loginPage);
-			webClient.waitForBackgroundJavaScript(20000);
-		
-			requestSettings = new WebRequest(url, HttpMethod.POST);
+	/***
+	 * Log in buyma Web
+	 * @param loginPage the web page address that will be concatenated to the root website to get the page address
+	 * @param username username used to log in
+	 * @param password password used to log in
+	 * @return if true logged in successfully
+	 * @throws Exception
+	 */
+	public void BuyMaLogin(String loginPage, String username, String password) throws Exception
+	{
+		//try
+		//{
 			
-			List<NameValuePair> response = page.getWebResponse().getResponseHeaders();
-			/*
-			for (NameValuePair header : response) {
-				requestSettings.setAdditionalHeader(header.getName(), header.getValue());
+			// Init chromedriver
+			//String chromeDriverPath = "C:\\Users\\tmorello\\WebScraperWorkspace\\chromedriver_win32\\chromedriver.exe" ;
+			//System.setProperty("webdriver.chrome.driver", chromeDriverPath);
+			//ChromeOptions options = new ChromeOptions();
+			//options.addArguments("user-data-dir=C:\\Users\\tmorello\\AppData\\Local\\Google\\Chrome\\User Data\\");
+			//options.addArguments("--start-maximized");
+			//WebDriver driver = new ChromeDriver(options);
+			//driver.manage().timeouts().implicitlyWait(5,TimeUnit.SECONDS);
+			if(logger!=null)
+				logger.log(Level.FINE, "Start BuyMaLogin method.");
+			if(driver == null)
+			{
+				if(logger!=null)
+					logger.log(Level.FINE, "Web browser not started yet.");
+				startWebDriver();
 			}
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Get the login page.");		
+			driver.get(webSiteLink+loginPage);
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Compile username and password and click login button.");
+			WebElement form = driver.findElement(By.name("formlogin"));
+			form.findElement(By.name("txtLoginId")).sendKeys(username);
+			Thread.sleep(3000);
+			form.findElement(By.name("txtLoginPass")).sendKeys(password);
+			Thread.sleep(1200);
+			form.findElement(By.xpath("//input[@value='ログイン']")).click();
+			Thread.sleep(5000);
+			/*
+			if(driver.getCurrentUrl().contains(webSiteLink+loginPage))
+				return false;
+			else
+				return true;
 			*/
-			requestSettings.setAdditionalHeader("Content-Type", "text/html; charset=utf-8");
-			requestSettings.setAdditionalHeader("Cache-Control", "no-cache");
-			requestSettings.setAdditionalHeader("Pragma", "no-cache");
-			requestSettings.setAdditionalHeader("Origin", webSiteLink+loginPage);
-			requestSettings.setAdditionalHeader("Content-Encoding", "gzip");
-			
-			HtmlForm form = page.getFormByName("formlogin");
-			
-			ArrayList<NameValuePair> inputFormParams = new ArrayList<NameValuePair>();
-			inputFormParams.add(new NameValuePair("txtLoginId", username));
-			inputFormParams.add(new NameValuePair("txtLoginPass", password));
-			TwoCaptchaService service = new TwoCaptchaService(apiKey, googleKey, webSiteLink+loginPage);
-			String recaptchaResult = service.solveCaptcha();
-			inputFormParams.add(new NameValuePair("recaptchaToken", recaptchaResult));			
-			inputFormParams.add(new NameValuePair("onetimeticket", form.getInputByName("onetimeticket").getValueAttribute()));
-			
-			requestSettings.setRequestParameters(inputFormParams);
-			
-			HtmlPage page2 = webClient.getPage(requestSettings);
-		    
-		    webClient.waitForBackgroundJavaScript(120000);
-		    
-		    BufferedWriter writer = new BufferedWriter(new FileWriter("c:\\after_login_buymapage.html"));
-		    writer.write(page2.asXml());		     
-		    writer.close();
-		    
-		    if(logger!=null)
-				logger.log(Level.FINE, "End buyMaLogin method");
-		    return page2;
+		/*
 		}
 		catch (Exception e) 
 		{
+			if(driver != null)
+				driver.close();
             throw new Exception(e.getMessage());
-        }
-		finally 
-    	{
-    		if(webClient != null)
-    		{
-	            webClient.getCurrentWindow().getJobManager().removeAllJobs();
-	            webClient.close();
-	            System.gc();
-    		}
-        }
-	}//BuyMaLogin2
+        }	
+        */
+	}//BuyMaLogin 
 	
 	/***
-	 * Login to the website
-	 * @param loginPage page relative url, will be added to the webSiteLink
-	 * @param username
-	 * @param password
-	 * @return
-	 * @throws Exception 
+	 * Uploads the zip files with items to the upload page. Log in is required before this.
+	 * @param downloadWebPage the web page address that will be concatenated to the root website to get the page address 
+	 * @param zipFilePathName path and name of zip file
+	 * @throws Exception
 	 */
-	public HtmlPage BuyMaLogin(String loginPage, String username, String password) throws Exception
+	public void uploadZipToBuyMa(String downloadWebPage, String zipFilePathName) throws Exception
 	{
-		WebClient webClient = null;
-		HtmlPage page = null;
-		
-		if(logger!=null)
-			logger.log(Level.FINE, "Start buyMaLogin method");
 		try
 		{
 			if(logger!=null)
-				logger.log(Level.INFO, "Open the web page: "+webSiteLink+loginPage);
-			webClient = StartWebBrowser();
-			//website redirects to the same page once you click on the checkbox, so one must disable HtmlUnit caching
-	        webClient.getCache().setMaxSize(0);
-			//webClient.getOptions().setJavaScriptEnabled(false);
-			page = (HtmlPage) webClient.getPage(webSiteLink+loginPage);
-			webClient.waitForBackgroundJavaScript(20000);
-			HtmlForm form = page.getFormByName("formlogin");
+				logger.log(Level.FINE, "Start uploadZipToBuyMa method.");
+			if(driver == null)
+				throw new Exception("Browser not started yet!");
 			
-			/*
-			BufferedWriter writer = new BufferedWriter(new FileWriter("c:\\before_login_buymapage.html"));
-			writer.write(page.asXml());		     
-		    writer.close();
-		    */
-			// Enter login and passwd
-			form.getInputByName("txtLoginId").type(username);
-		    form.getInputByName("txtLoginPass").type(password);
-		    		    
-		    TwoCaptchaService service = new TwoCaptchaService(apiKey, googleKey, webSiteLink+loginPage);
-		    form.getInputByName("recaptchaToken").setValueAttribute(service.solveCaptcha());
-		    
-		    // Click "Sign In" button
-		    if(logger!=null)
-				logger.log(Level.INFO, "Try to log in");
-		    webClient.getOptions().setJavaScriptEnabled(false);
-		    form.getInputByValue("ログイン").click();
-		    		   
-	        
-	        HtmlPage  page2 = (HtmlPage) webClient.getTopLevelWindows().get(0).getEnclosedPage();
-	        
-	        BufferedWriter writer = new BufferedWriter(new FileWriter("c:\\after_login_buymapage.html"));
-			writer.write(page2.asXml());		     
-		    writer.close();
-		    
-		    if(logger!=null)
-				logger.log(Level.FINE, "End buyMaLogin method");
-		    return page2;
+			if(logger!=null)
+				logger.log(Level.INFO, "Navigate to the download page.");
+			driver.navigate().to(webSiteLink+downloadWebPage);
+			Thread.sleep(5000);
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Click upload button.");
+			driver.findElement(By.linkText("商品リストをアップロードする")).click();
+			Thread.sleep(1200);
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Select zip file type from drop down menu.");
+			new Select(driver.findElement(By.id("filetype"))).selectByVisibleText("zipファイルでまとめてアップロード");
+			Thread.sleep(1200);
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Click file dialog open button.");
+			WebElement inputfile = driver.findElement(By.id("zip"));
+			inputfile.sendKeys(zipFilePathName);
+			
+			Thread.sleep(1200);
+			
+			driver.findElement(By.name("upload")).click();
+			
+			Thread.sleep(3000);
+			
+			driver.findElement(By.linkText("履歴画面に遷移")).click();
+			
+			Thread.sleep(2000);
+			
+			if(logger!=null)
+				logger.log(Level.FINE, "End uploadZipToBuyMa method.");
 		}
 		catch (Exception e) 
 		{
+			if(driver != null)
+				driver.quit();
             throw new Exception(e.getMessage());
-        }
-		finally 
-    	{
-    		if(webClient != null)
-    		{
-	            webClient.getCurrentWindow().getJobManager().removeAllJobs();
-	            webClient.close();
-	            System.gc();
-    		}
-        }
-	}//buyMaLogin
+        }	
+	}
 	
-	private WebClient StartWebBrowser() throws Exception
-    {
-    	try
-    	{
-	    	//light web browser start
+	/***
+	 * download the items present in buyma as csv zipped files. Log in is required before this.
+	 * @param downloadWebPage the web page address that will be concatenated to the root website to get the page address 
+	 * @throws Exception 
+	 */
+	public void downloadAllBuyMaCatalog(String activeitemsPage, String downloadWebPage) throws Exception
+	{
+		try
+		{
 			if(logger!=null)
-				logger.log(Level.FINE, "Start the light Web Browser");
-			final WebClient webClient = new WebClient(BrowserVersion.CHROME);
-			webClient.getOptions().setUseInsecureSSL(true);
-			webClient.getCookieManager().setCookiesEnabled(true);
-	        webClient.getOptions().setJavaScriptEnabled(true);
-	        webClient.getOptions().setTimeout(120000);
-	        webClient.getOptions().setCssEnabled(true);
-	        webClient.getOptions().setThrowExceptionOnScriptError(false);
-	        webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-	        //webClient.setCssErrorHandler(new SilentCssErrorHandler());
-	        //webClient.getOptions().setPrintContentOnFailingStatusCode(false);
-	        webClient.getOptions().setPopupBlockerEnabled(true);
-	        //webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-	        
-	        /*
-	        final History window = webClient.getWebWindows().get(0).getHistory();
-	        final Field f = window.getClass().getDeclaredField("ignoreNewPages_"); //NoSuchFieldException
-	        f.setAccessible(true);
-	        ((ThreadLocal<Boolean>) f.get(window)).set(Boolean.TRUE);
-	        
-	        
-	        String proxyname = "guess.proxy.eu";
-	        int proxyport = 8080;
-	        ProxyConfig proxy = new ProxyConfig(proxyname,proxyport);
-	        webClient.getOptions().setProxyConfig(proxy);
-	        
-	        final DefaultCredentialsProvider cp = new DefaultCredentialsProvider();
-	        cp.addCredentials("GUESSEU\tmorello", "password",proxyname,proxyport,null);
-	        webClient.setCredentialsProvider(cp);
-	        */
-	        
-	        return webClient;
-    	}//try
-        catch (Exception e) 
+				logger.log(Level.FINE, "Start downloadAllBuyMaCatalog method.");
+			if(driver == null)
+				throw new Exception("Browser not started yet!");
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Navigate to the active items page.");
+			driver.navigate().to(webSiteLink+activeitemsPage);
+			Thread.sleep(5000);
+			
+			if(logger!=null)
+				logger.log(Level.FINE, "Click download button.");
+			driver.findElement(By.id("js-sell-bulk-export-button")).click();
+			Thread.sleep(5000);
+			
+			if(logger!=null)
+				logger.log(Level.FINE, "Choose to download all.");
+			driver.findElement(By.cssSelector("label[for='sell-bulk-export-dialog__preset_1']")).click();
+			Thread.sleep(1000);
+			
+            if(logger!=null)
+				logger.log(Level.FINE, "Confirm download.");
+            driver.findElement(By.xpath("//input[@value='ダウンロードを準備']")).click();
+			
+            if(logger!=null)
+				logger.log(Level.FINE, "Wait some seconds the dwonload to be ready.");
+			Thread.sleep(60000);
+			
+			if(logger!=null)
+				logger.log(Level.INFO, "Navigate to the download page.");
+			driver.navigate().to(webSiteLink+downloadWebPage);			
+					
+			if(logger!=null)
+				logger.log(Level.INFO, "Click on first download button found.");
+			driver.findElement(By.xpath("//a[starts-with(@href, 'https://www.buyma.com/my/sell/bulk/') and contains(@href, '/download/exported')]")).click();
+		}
+		catch (Exception e) 
 		{
+			if(driver != null)
+				driver.quit();
             throw new Exception(e.getMessage());
-        }
-    }//StartWebBrowser
-	 
-	/**
-     * Gets the html page from: the web main url concatenated to the one in the argument, and download it to text a file. 
-     * @param url to be concatenated to the main web site link
-     * @param FilepathFilename path and name of destination file
-     * @throws Exception
-     */
-    public void getPageXml(String url, String FilepathFilename) throws Exception
-    {
-    	//open the web client
-    	WebClient webClient = StartWebBrowser();
-    	HtmlPage page = null;
-    	String html = null;
-    	BufferedWriter writer = null;
-    	
-    	try
+        }	
+	}//downloadAllBuyMaCatalog
+	
+	protected void startWebDriver() throws Exception
+	{
+		try
     	{
-    		page = webClient.getPage(webSiteLink+url);
-			webClient.waitForBackgroundJavaScript(6000);
-			html = page.asXml();
-			writer = new BufferedWriter(new FileWriter(FilepathFilename));
-		    writer.write(html);		     
-		    writer.close();
-    	}//try
-    	catch (Exception e) 
+			//light web browser start
+			if(logger!=null)
+				logger.log(Level.FINE, "Start the Chrome Web Browser");
+			if(this.chromeDriverPathName.equals(""))
+				throw new Exception("Chrome Driver path not set!");
+			System.setProperty("webdriver.chrome.driver", this.chromeDriverPathName);
+			ChromeOptions options = new ChromeOptions();
+			if(!this.chromeUserDataPath.equals(""))
+				options.addArguments("user-data-dir="+this.chromeUserDataPath);
+			options.addArguments("--start-maximized");
+			
+			//add default download directory
+			Map<String, Object> prefs = new HashMap<String, Object>();
+			prefs.put("profile.default_content_settings.popups", 0);
+			if(!this.downloadFilesPath.equals(""))
+				prefs.put("download.default_directory", this.downloadFilesPath);
+			prefs.put("extensions_to_open", "");
+			prefs.put("directory_upgrade", "True");
+			options.setExperimentalOption("prefs", prefs);
+								
+			driver = new ChromeDriver(options);
+			driver.manage().timeouts().implicitlyWait(5,TimeUnit.SECONDS);
+			if(logger!=null)
+				logger.log(Level.FINE, "Chrome Web Browser started.");
+    	}
+		catch (Exception e) 
 		{
+			if(driver != null)
+				driver.quit();
             throw new Exception(e.getMessage());
-        }
-    	finally 
+        }		
+	}//startWebDriver
+	
+	public void closeBrowser() throws Exception
+	{
+		try
     	{
-    		if(webClient != null)
-    		{
-	            webClient.getCurrentWindow().getJobManager().removeAllJobs();
-	            webClient.close();
-	            writer.close();
-	            System.gc();
-    		}
-        }//finally
-    }//getPageXml
+			if(logger!=null)
+				logger.log(Level.FINE, "Close the Chrome Web Browser");
+			if(this.driver !=null)
+				this.driver.quit();
+    	}
+		catch (Exception e) 
+		{
+			throw new Exception(e.getMessage());
+        }	
+	}
+	
+	public String getChromeDriverPathName()
+	{
+		return this.chromeDriverPathName;
+	}
+	
+	public String getChromeUserDataPath()
+	{
+		return this.chromeUserDataPath;
+	}
+	
+	public void setChromeUserDataPath(String chromeUserDataPath)
+	{
+		this.chromeUserDataPath = chromeUserDataPath; 
+	}
+	
+	public void setDownloadFilesPath(String downloadFilesPath)
+	{
+		this.downloadFilesPath = downloadFilesPath;
+	}
+	
+	public String getDownloadFilesPath()
+	{
+		return this.downloadFilesPath;
+	}
 }//class

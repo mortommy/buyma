@@ -70,6 +70,7 @@ public abstract class ManageVendor
 	
 	public abstract void loadStagingFromDB() throws Exception;
 	public abstract void loadStagingFromCSV(String filePathName) throws Exception;
-	public abstract void loadConsolidatedTable() throws Exception;
+	public abstract void loadConsolidatedTable(int mode) throws Exception;
 	public abstract void loadBuymaTable() throws Exception;
+
 }//class

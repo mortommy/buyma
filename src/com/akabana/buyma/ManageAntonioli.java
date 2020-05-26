@@ -153,13 +153,22 @@ public class ManageAntonioli extends ManageVendor
 						
 			//check if source table exists
 			if(logger!=null)
-				logger.log(Level.FINE, "Check if table ANTONIOLI_DOWNLOADED_ITEMS exists i nsource DB");
+				logger.log(Level.FINE, "Check if table ANTONIOLI_DOWNLOADED_ITEMS exists in the source DB");
 			if(!sourceSqlLiteDB.tableExists("ANTONIOLI_DOWNLOADED_ITEMS"))
 			{
 				if(logger!=null)
 					logger.log(Level.SEVERE, "Table ANTONIOLI_DOWNLOADED_ITEMS not exist in source DB!");
 				throw new Exception("Source table ANTONIOLI_DOWNLOADED_ITEMS not exists in DB "+sourceSqlLiteDB.getDbFile());
-			}				
+			}	
+			
+			if(logger!=null)
+				logger.log(Level.FINE, "Check if table ERROR_WEB_PAGES exists in the source DB");
+			if(!sourceSqlLiteDB.tableExists("ERROR_WEB_PAGES"))
+			{
+				if(logger!=null)
+					logger.log(Level.SEVERE, "Table ERROR_WEB_PAGES not exist in source DB!");
+				throw new Exception("Source table ERROR_WEB_PAGES not exists in DB "+sourceSqlLiteDB.getDbFile());
+			}	
 			
 			//get the records from the source
 			if(logger!=null)
@@ -194,19 +203,73 @@ public class ManageAntonioli extends ManageVendor
 				logger.log(Level.INFO, "Insert records from source table ANTONIOLI_DOWNLOADED_ITEMS to destination ST_ANTONIOLI_ITEMS");
 			while (sourceRs.next()) 
 			{
-				sqlStatement = "INSERT INTO ST_ANTONIOLI_ITEMS (ITEM_ID,ITEM_SKU,ITEM_NAME,ITEM_BRAND,ITEM_MODEL,ITEM_PART,ITEM_STYLE,ITEM_COLOR,ITEM_SIZE,ITEM_DIM,ITEM_DESCRIPTION,ITEM_GENDER,ITEM_CATEGORY,ITEM_HIERARCHY1,ITEM_HIERARCHY2,ITEM_HIERARCHY3,ITEM_HIERARCHY4,ITEM_SEASON,ITEM_PRICE,ITEM_PRICE_CURRENCY,ITEM_LINK,ITEM_PICTURE,ITEM_PICTURE_ALT1,ITEM_PICTURE_ALT2,ITEM_PICTURE_ALT3,ITEM_PICTURE_ALT4,ITEM_AVALAIBILITY,ITEM_SOURCE,CREATED_TIMESTAMP) " +
-						"VALUES('"+sourceRs.getString("ITEM_ID")+"','"+sourceRs.getString("ITEM_SKU")+"','"+sourceRs.getString("ITEM_NAME")+"','"+sourceRs.getString("ITEM_BRAND")+"','"+
-						sourceRs.getString("ITEM_MODEL")+"','"+sourceRs.getString("ITEM_PART")+"','"+sourceRs.getString("ITEM_STYLE")+"','"+sourceRs.getString("ITEM_COLOR")+"','"+sourceRs.getString("ITEM_SIZE")+"','"+
-						sourceRs.getString("ITEM_DIM")+"','"+sourceRs.getString("ITEM_DESCRIPTION").replace("'"," ")+"','"+sourceRs.getString("ITEM_GENDER")+"','"+sourceRs.getString("ITEM_CATEGORY")+"','"+
-						sourceRs.getString("ITEM_HIERARCHY1")+"','"+sourceRs.getString("ITEM_HIERARCHY2")+"','"+sourceRs.getString("ITEM_HIERARCHY3")+"','"+sourceRs.getString("ITEM_HIERARCHY4")+"','"+
-						sourceRs.getString("ITEM_SEASON")+"','"+sourceRs.getString("ITEM_PRICE")+"','"+sourceRs.getString("ITEM_PRICE_CURRENCY")+"','"+sourceRs.getString("ITEM_LINK")+"','"+
-						sourceRs.getString("ITEM_PICTURE")+"','"+sourceRs.getString("ITEM_PICTURE_ALT1")+"','"+sourceRs.getString("ITEM_PICTURE_ALT2")+"','"+sourceRs.getString("ITEM_PICTURE_ALT3")+"','"+sourceRs.getString("ITEM_PICTURE_ALT4")+"','"+
-						sourceRs.getString("ITEM_AVALAIBILITY")+"','"+sourceRs.getString("ITEM_SOURCE")+"','"+sourceRs.getString("CREATED_TIMESTAMP")+"'"+
-						");";
+				sqlStatement = "SELECT COUNT(*) FROM ST_ANTONIOLI_ITEMS "+
+							   "WHERE ITEM_ID = '"+sourceRs.getString("ITEM_ID")+"' "+
+							   //"AND ITEM_GENDER = '"+sourceRs.getString("ITEM_GENDER")+"' "+
+							   "AND ITEM_SIZE = '"+sourceRs.getString("ITEM_SIZE")+"';";
+				if(logger!=null)
+					logger.log(Level.FINE, "Check if there is a record with natural key already in destination table.");
+				ResultSet crs = destinationSqlLiteDB.executeSelect(sqlStatement);
+				
+				if(crs.getInt(1) == 0)
+				{				
+					sqlStatement = "INSERT INTO ST_ANTONIOLI_ITEMS (ITEM_ID,ITEM_SKU,ITEM_NAME,ITEM_BRAND,ITEM_MODEL,ITEM_PART,ITEM_STYLE,ITEM_COLOR,ITEM_SIZE,ITEM_DIM,ITEM_DESCRIPTION,ITEM_GENDER,ITEM_CATEGORY,ITEM_HIERARCHY1,ITEM_HIERARCHY2,ITEM_HIERARCHY3,ITEM_HIERARCHY4,ITEM_SEASON,ITEM_PRICE,ITEM_PRICE_CURRENCY,ITEM_LINK,ITEM_PICTURE,ITEM_PICTURE_ALT1,ITEM_PICTURE_ALT2,ITEM_PICTURE_ALT3,ITEM_PICTURE_ALT4,ITEM_AVALAIBILITY,ITEM_SOURCE,CREATED_TIMESTAMP) " +
+							"VALUES('"+sourceRs.getString("ITEM_ID")+"','"+sourceRs.getString("ITEM_SKU")+"','"+sourceRs.getString("ITEM_NAME")+"','"+sourceRs.getString("ITEM_BRAND")+"','"+
+							sourceRs.getString("ITEM_MODEL")+"','"+sourceRs.getString("ITEM_PART")+"','"+sourceRs.getString("ITEM_STYLE")+"','"+sourceRs.getString("ITEM_COLOR")+"','"+sourceRs.getString("ITEM_SIZE")+"','"+
+							sourceRs.getString("ITEM_DIM")+"','"+sourceRs.getString("ITEM_DESCRIPTION").replace("'"," ")+"','"+sourceRs.getString("ITEM_GENDER")+"','"+sourceRs.getString("ITEM_CATEGORY")+"','"+
+							sourceRs.getString("ITEM_HIERARCHY1")+"','"+sourceRs.getString("ITEM_HIERARCHY2")+"','"+sourceRs.getString("ITEM_HIERARCHY3")+"','"+sourceRs.getString("ITEM_HIERARCHY4")+"','"+
+							sourceRs.getString("ITEM_SEASON")+"','"+sourceRs.getString("ITEM_PRICE")+"','"+sourceRs.getString("ITEM_PRICE_CURRENCY")+"','"+sourceRs.getString("ITEM_LINK")+"','"+
+							sourceRs.getString("ITEM_PICTURE")+"','"+sourceRs.getString("ITEM_PICTURE_ALT1")+"','"+sourceRs.getString("ITEM_PICTURE_ALT2")+"','"+sourceRs.getString("ITEM_PICTURE_ALT3")+"','"+sourceRs.getString("ITEM_PICTURE_ALT4")+"','"+
+							sourceRs.getString("ITEM_AVALAIBILITY")+"','"+sourceRs.getString("ITEM_SOURCE")+"','"+sourceRs.getString("CREATED_TIMESTAMP")+"'"+
+							");";
+					if(logger!=null)
+						logger.log(Level.FINE, "Run insert statement.");
+					destinationSqlLiteDB.executeUpdate(sqlStatement);
+				}
+				else
+				{
+					if(logger!=null)
+						logger.log(Level.FINE, "Found a natural key ("+sourceRs.getString("ITEM_ID")+", "+sourceRs.getString("ITEM_GENDER")+", "+sourceRs.getString("ITEM_SIZE")+") already in destination table, skip insert.");
+				}
+					
+			}//while			
+			
+			//get the records from the source
+			if(logger!=null)
+				logger.log(Level.INFO, "Get data from source table source db table ERROR_WEB_PAGES");
+			sqlStatement = "SELECT * FROM ERROR_WEB_PAGES;";
+			sourceRs = sourceSqlLiteDB.executeSelect(sqlStatement);
+					
+			//if doesn't exists, create the destination table
+			if(logger!=null)
+				logger.log(Level.FINE, "Check if table ERROR_WEB_PAGES exists in destination DB");
+			if(!destinationSqlLiteDB.tableExists("ERROR_WEB_PAGES"))
+			{
+				if(logger!=null)
+					logger.log(Level.INFO, "Staging table ERROR_WEB_PAGES not exists. Create it.");
+				sqlStatement = "CREATE TABLE ERROR_WEB_PAGES ( "+
+						"LINK TEXT);";
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+			}//if
+			
+			//clean existing data
+			if(logger!=null)
+				logger.log(Level.INFO, "Clean existing data from destination ST_ANTONIOLI_ITEMS");
+			sqlStatement = "DELETE FROM ERROR_WEB_PAGES;";
+			destinationSqlLiteDB.executeUpdate(sqlStatement);
+			
+			//insert items from source to staging
+			if(logger!=null)
+				logger.log(Level.INFO, "Insert records from source table ERROR_WEB_PAGES to destination ERROR_WEB_PAGES");
+			while (sourceRs.next()) 
+			{
+							
+				sqlStatement = "INSERT INTO ERROR_WEB_PAGES (LINK) " +
+						"VALUES('"+sourceRs.getString("LINK")+"');";
 				if(logger!=null)
 					logger.log(Level.FINE, "Run insert statement.");
-				destinationSqlLiteDB.executeUpdate(sqlStatement);
-			}//while			
+				destinationSqlLiteDB.executeUpdate(sqlStatement);					
+			}//while				
 			
 			if(logger!=null)
 				logger.log(Level.FINE, "Close connections to DBs.");
@@ -241,7 +304,7 @@ public class ManageAntonioli extends ManageVendor
 	 * @throws Exception
 	 */
 	@Override
-	public void loadConsolidatedTable() throws Exception
+	public void loadConsolidatedTable(int mode) throws Exception
 	{
 		String sqlStatement = "";		
 		try
@@ -283,356 +346,362 @@ public class ManageAntonioli extends ManageVendor
 						   "FROM ST_ANTONIOLI_ITEMS st "+
 						   "WHERE st.ITEM_ID NOT IN "+
 						   "(SELECT dt.ITEM_ID "+
-						   "FROM ANTONIOLI dt);";
+						   "FROM ANTONIOLI dt) "+
+						   "AND st.ITEM_LINK NOT IN "+
+						   "(SELECT LINK FROM ERROR_WEB_PAGES);";
 			if(logger!=null)
 				logger.log(Level.INFO, "Insert into ANTONIOLI the new items found in staging.");
 			destinationSqlLiteDB.executeUpdate(sqlStatement);	
 			
-			//mark items in the consolidate table as DELETED, NOT ANYMORE PRESENT in staging
-			//the check is only on items that should be present in BuyMa (status NEW, PROCESSED or MODIFIED, PROCESSED)
-			//the new records status will be to DELETED and TO_BE_PROCESSED
-			Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:sss");
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET STATUS="+StagingRecordStatus.DELETED+", "+
-							"MODIFIED_TIMESTAMP='"+sdf.format(timestamp)+"', "+
-							"BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+" "+
-							"WHERE ITEM_ID NOT IN "+
-							"(SELECT st.ITEM_ID "+
-							"FROM ST_ANTONIOLI_ITEMS st)"+
-							"AND (STATUS="+StagingRecordStatus.NEW+" "+
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+")"+
-							"OR "+
-							"(STATUS="+StagingRecordStatus.MODIFIED+" "+
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Mark in ANTONIOLI as deleted items not found in staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//UPDATE and mark items with the records from staging where some FIELDS CHANGED
-			//the check is only on items that should be present in BuyMa (status NEW, PROCESSED or MODIFIED, PROCESSED)
-			
-			/*
-			//sqlite allows the update of one field at time
-			
-			//modified date
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET MODIFIED_TIMESTAMP= IFNULL((select '"+sdf.format(timestamp)+"' "+
+			if(mode == LoadDataMode.INSERT_UPDATE)
+			{
+				//mark items in the consolidate table as DELETED, NOT ANYMORE PRESENT in staging
+				//the check is only on items that should be present in BuyMa (status NEW, PROCESSED or MODIFIED, PROCESSED)
+				//the new records status will be to DELETED and TO_BE_PROCESSED
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:sss");
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET STATUS="+StagingRecordStatus.DELETED+", "+
+								"MODIFIED_TIMESTAMP='"+sdf.format(timestamp)+"', "+
+								"BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+" "+
+								"WHERE ITEM_ID NOT IN "+
+								"(SELECT st.ITEM_ID "+
+								"FROM ST_ANTONIOLI_ITEMS st)"+
+								"AND (STATUS="+StagingRecordStatus.NEW+" "+
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+")"+
+								"OR "+
+								"(STATUS="+StagingRecordStatus.MODIFIED+" "+
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+
+								"AND ITEM_HIERARCHY2 <> 'Size (S/M/L)';";
+				if(logger!=null)
+					logger.log(Level.INFO, "Mark in ANTONIOLI as deleted items not found in staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//UPDATE and mark items with the records from staging where some FIELDS CHANGED
+				//the check is only on items that should be present in BuyMa (status NEW, PROCESSED or MODIFIED, PROCESSED)
+				
+				/*
+				//sqlite allows the update of one field at time
+				
+				//modified date
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET MODIFIED_TIMESTAMP= IFNULL((select '"+sdf.format(timestamp)+"' "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"("+
+								"s.ITEM_NAME <> ANTONIOLI.ITEM_NAME OR "+ 
+								//"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND OR "+ 
+								"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION OR "+ 
+								//"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY OR "+ 
+								//"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 OR "+ 
+								//"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 OR "+ 
+								//"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 OR "+ 
+								//"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 OR "+ 
+								"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE OR "+ 
+								"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY OR "+ 
+								"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE OR "+ 
+								"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 OR "+ 
+								"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 OR "+ 
+								"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 OR "+ 
+								"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 OR "+ 
+								"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY) "+
+								"),ANTONIOLI.MODIFIED_TIMESTAMP) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update modified date of ANTONIOLI items changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//status
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET STATUS= IFNULL((select "+StagingRecordStatus.MODIFIED+" "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"("+
+								"s.ITEM_NAME <> ANTONIOLI.ITEM_NAME OR "+ 
+								//"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND OR "+ 
+								"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION OR "+ 
+								//"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY OR "+ 
+								//"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 OR "+ 
+								//"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 OR "+ 
+								//"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 OR "+ 
+								//"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 OR "+ 
+								"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE OR "+ 
+								"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY OR "+ 
+								"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE OR "+ 
+								"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 OR "+ 
+								"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 OR "+ 
+								"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 OR "+ 
+								"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 OR "+ 
+								"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY) "+
+								"),ANTONIOLI.STATUS) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update status of ANTONIOLI items changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//buyma status
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET BUYMA_STATUS= IFNULL((select "+StagingBuymaStatus.TO_BE_PROCESSED+" "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"("+
+								"s.ITEM_NAME <> ANTONIOLI.ITEM_NAME OR "+ 
+								"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND OR "+ 
+								"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION OR "+ 
+								"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY OR "+ 
+								"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 OR "+ 
+								"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 OR "+ 
+								"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 OR "+ 
+								"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 OR "+ 
+								"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE OR "+ 
+								"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY OR "+ 
+								"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE OR "+ 
+								"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 OR "+ 
+								"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 OR "+ 
+								"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 OR "+ 
+								"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 OR "+ 
+								"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY) "+
+								"),ANTONIOLI.STATUS) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update status of ANTONIOLI items changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				/*
+				//brand
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_BRAND= IFNULL((select s.ITEM_BRAND "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND "+
+								"),ANTONIOLI.ITEM_BRAND) "+
+								"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
+								";";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_BRAND of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//description
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_DESCRIPTION= IFNULL((select s.ITEM_DESCRIPTION "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION "+
+								"),ANTONIOLI.ITEM_DESCRIPTION) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_DESCRIPTION of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				/*
+				//category
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_CATEGORY= IFNULL((select s.ITEM_CATEGORY "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY "+
+								"),ANTONIOLI.ITEM_CATEGORY) "+
+								"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
+								";";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_CATEGORY of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//Hierarchy1
+				sqlStatement = "UPDATE ANTONIOLI "+
+							"SET ITEM_HIERARCHY1= IFNULL((select s.ITEM_HIERARCHY1 "+
 							"FROM ST_ANTONIOLI_ITEMS s "+ 
 							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"("+
-							"s.ITEM_NAME <> ANTONIOLI.ITEM_NAME OR "+ 
-							//"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND OR "+ 
-							"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION OR "+ 
-							//"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY OR "+ 
-							//"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 OR "+ 
-							//"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 OR "+ 
-							//"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 OR "+ 
-							//"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 OR "+ 
-							"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE OR "+ 
-							"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY OR "+ 
-							"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE OR "+ 
-							"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 OR "+ 
-							"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 OR "+ 
-							"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 OR "+ 
-							"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 OR "+ 
-							"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY) "+
-							"),ANTONIOLI.MODIFIED_TIMESTAMP) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update modified date of ANTONIOLI items changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//status
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET STATUS= IFNULL((select "+StagingRecordStatus.MODIFIED+" "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"("+
-							"s.ITEM_NAME <> ANTONIOLI.ITEM_NAME OR "+ 
-							//"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND OR "+ 
-							"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION OR "+ 
-							//"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY OR "+ 
-							//"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 OR "+ 
-							//"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 OR "+ 
-							//"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 OR "+ 
-							//"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 OR "+ 
-							"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE OR "+ 
-							"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY OR "+ 
-							"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE OR "+ 
-							"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 OR "+ 
-							"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 OR "+ 
-							"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 OR "+ 
-							"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 OR "+ 
-							"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY) "+
-							"),ANTONIOLI.STATUS) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update status of ANTONIOLI items changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//buyma status
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET BUYMA_STATUS= IFNULL((select "+StagingBuymaStatus.TO_BE_PROCESSED+" "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"("+
-							"s.ITEM_NAME <> ANTONIOLI.ITEM_NAME OR "+ 
-							"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND OR "+ 
-							"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION OR "+ 
-							"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY OR "+ 
-							"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 OR "+ 
-							"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 OR "+ 
-							"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 OR "+ 
-							"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 OR "+ 
-							"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE OR "+ 
-							"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY OR "+ 
-							"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE OR "+ 
-							"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 OR "+ 
-							"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 OR "+ 
-							"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 OR "+ 
-							"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 OR "+ 
-							"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY) "+
-							"),ANTONIOLI.STATUS) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update status of ANTONIOLI items changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			/*
-			//brand
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_BRAND= IFNULL((select s.ITEM_BRAND "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_BRAND <> ANTONIOLI.ITEM_BRAND "+
-							"),ANTONIOLI.ITEM_BRAND) "+
+							"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 "+
+							"),ANTONIOLI.ITEM_HIERARCHY1) "+
 							"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
 							";";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_BRAND of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//description
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_DESCRIPTION= IFNULL((select s.ITEM_DESCRIPTION "+
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_HIERARCHY1 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//Hierarchy2
+				sqlStatement = "UPDATE ANTONIOLI "+
+							"SET ITEM_HIERARCHY2= IFNULL((select s.ITEM_HIERARCHY2 "+
 							"FROM ST_ANTONIOLI_ITEMS s "+ 
 							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_DESCRIPTION <> ANTONIOLI.ITEM_DESCRIPTION "+
-							"),ANTONIOLI.ITEM_DESCRIPTION) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_DESCRIPTION of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			/*
-			//category
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_CATEGORY= IFNULL((select s.ITEM_CATEGORY "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_CATEGORY <> ANTONIOLI.ITEM_CATEGORY "+
-							"),ANTONIOLI.ITEM_CATEGORY) "+
+							"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 "+
+							"),ANTONIOLI.ITEM_HIERARCHY2) "+
 							"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
 							";";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_CATEGORY of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//Hierarchy1
-			sqlStatement = "UPDATE ANTONIOLI "+
-						"SET ITEM_HIERARCHY1= IFNULL((select s.ITEM_HIERARCHY1 "+
-						"FROM ST_ANTONIOLI_ITEMS s "+ 
-						"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-						"s.ITEM_HIERARCHY1 <> ANTONIOLI.ITEM_HIERARCHY1 "+
-						"),ANTONIOLI.ITEM_HIERARCHY1) "+
-						"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
-						";";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_HIERARCHY1 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//Hierarchy2
-			sqlStatement = "UPDATE ANTONIOLI "+
-						"SET ITEM_HIERARCHY2= IFNULL((select s.ITEM_HIERARCHY2 "+
-						"FROM ST_ANTONIOLI_ITEMS s "+ 
-						"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-						"s.ITEM_HIERARCHY2 <> ANTONIOLI.ITEM_HIERARCHY2 "+
-						"),ANTONIOLI.ITEM_HIERARCHY2) "+
-						"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
-						";";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_HIERARCHY2 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//Hierarchy3
-			sqlStatement = "UPDATE ANTONIOLI "+
-						"SET ITEM_HIERARCHY3= IFNULL((select s.ITEM_HIERARCHY3 "+
-						"FROM ST_ANTONIOLI_ITEMS s "+ 
-						"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-						"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 "+
-						"),ANTONIOLI.ITEM_HIERARCHY3) "+
-						"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
-						";";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_HIERARCHY3 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//Hierarchy4
-			sqlStatement = "UPDATE ANTONIOLI "+
-						"SET ITEM_HIERARCHY4= IFNULL((select s.ITEM_HIERARCHY4 "+
-						"FROM ST_ANTONIOLI_ITEMS s "+ 
-						"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-						"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 "+
-						"),ANTONIOLI.ITEM_HIERARCHY4) "+
-						"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
-						";";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_HIERARCHY4 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//price
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PRICE= IFNULL((select s.ITEM_PRICE "+
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_HIERARCHY2 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//Hierarchy3
+				sqlStatement = "UPDATE ANTONIOLI "+
+							"SET ITEM_HIERARCHY3= IFNULL((select s.ITEM_HIERARCHY3 "+
 							"FROM ST_ANTONIOLI_ITEMS s "+ 
 							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE "+
-							"),ANTONIOLI.ITEM_PRICE) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PRICE of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//price_currency
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PRICE_CURRENCY= IFNULL((select s.ITEM_PRICE_CURRENCY "+
+							"s.ITEM_HIERARCHY3 <> ANTONIOLI.ITEM_HIERARCHY3 "+
+							"),ANTONIOLI.ITEM_HIERARCHY3) "+
+							"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
+							";";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_HIERARCHY3 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//Hierarchy4
+				sqlStatement = "UPDATE ANTONIOLI "+
+							"SET ITEM_HIERARCHY4= IFNULL((select s.ITEM_HIERARCHY4 "+
 							"FROM ST_ANTONIOLI_ITEMS s "+ 
 							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY "+
-							"),ANTONIOLI.ITEM_PRICE_CURRENCY) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PRICE_CURRENCY of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//picture
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PICTURE= IFNULL((select s.ITEM_PICTURE "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE "+
-							"),ANTONIOLI.ITEM_PICTURE) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PICTURE of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//picture_alt1
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PICTURE_ALT1= IFNULL((select s.ITEM_PICTURE_ALT1 "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 "+
-							"),ANTONIOLI.ITEM_PICTURE_ALT1) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PICTURE_ALT1 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//picture_alt2
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PICTURE_ALT2= IFNULL((select s.ITEM_PICTURE_ALT2 "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 "+
-							"),ANTONIOLI.ITEM_PICTURE_ALT2) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PICTURE_ALT2 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//picture_alt3
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PICTURE_ALT3= IFNULL((select s.ITEM_PICTURE_ALT3 "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 "+
-							"),ANTONIOLI.ITEM_PICTURE_ALT3) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PICTURE_ALT3 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//picture_alt4
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_PICTURE_ALT4= IFNULL((select s.ITEM_PICTURE_ALT4 "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 "+
-							"),ANTONIOLI.ITEM_PICTURE_ALT4) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_PICTURE_ALT4 of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
-			//availability
-			sqlStatement = "UPDATE ANTONIOLI "+
-							"SET ITEM_AVALAIBILITY= IFNULL((select s.ITEM_AVALAIBILITY "+
-							"FROM ST_ANTONIOLI_ITEMS s "+ 
-							"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
-							"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY "+
-							"),ANTONIOLI.ITEM_AVALAIBILITY) "+
-							"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
-							"OR "+ 
-							"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
-							"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
-			if(logger!=null)
-				logger.log(Level.INFO, "Update ITEM_AVALAIBILITY of ANTONIOLI items where value changed from the staging.");
-			destinationSqlLiteDB.executeUpdate(sqlStatement);
-		*/	
+							"s.ITEM_HIERARCHY4 <> ANTONIOLI.ITEM_HIERARCHY4 "+
+							"),ANTONIOLI.ITEM_HIERARCHY4) "+
+							"WHERE STATUS<>"+StagingRecordStatus.DELETED+" "+
+							";";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_HIERARCHY4 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//price
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PRICE= IFNULL((select s.ITEM_PRICE "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PRICE <> ANTONIOLI.ITEM_PRICE "+
+								"),ANTONIOLI.ITEM_PRICE) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PRICE of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//price_currency
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PRICE_CURRENCY= IFNULL((select s.ITEM_PRICE_CURRENCY "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PRICE_CURRENCY <> ANTONIOLI.ITEM_PRICE_CURRENCY "+
+								"),ANTONIOLI.ITEM_PRICE_CURRENCY) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PRICE_CURRENCY of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//picture
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PICTURE= IFNULL((select s.ITEM_PICTURE "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PICTURE <> ANTONIOLI.ITEM_PICTURE "+
+								"),ANTONIOLI.ITEM_PICTURE) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PICTURE of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//picture_alt1
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PICTURE_ALT1= IFNULL((select s.ITEM_PICTURE_ALT1 "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PICTURE_ALT1 <> ANTONIOLI.ITEM_PICTURE_ALT1 "+
+								"),ANTONIOLI.ITEM_PICTURE_ALT1) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PICTURE_ALT1 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//picture_alt2
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PICTURE_ALT2= IFNULL((select s.ITEM_PICTURE_ALT2 "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PICTURE_ALT2 <> ANTONIOLI.ITEM_PICTURE_ALT2 "+
+								"),ANTONIOLI.ITEM_PICTURE_ALT2) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PICTURE_ALT2 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//picture_alt3
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PICTURE_ALT3= IFNULL((select s.ITEM_PICTURE_ALT3 "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PICTURE_ALT3 <> ANTONIOLI.ITEM_PICTURE_ALT3 "+
+								"),ANTONIOLI.ITEM_PICTURE_ALT3) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PICTURE_ALT3 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//picture_alt4
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_PICTURE_ALT4= IFNULL((select s.ITEM_PICTURE_ALT4 "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_PICTURE_ALT4 <> ANTONIOLI.ITEM_PICTURE_ALT4 "+
+								"),ANTONIOLI.ITEM_PICTURE_ALT4) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_PICTURE_ALT4 of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				
+				//availability
+				sqlStatement = "UPDATE ANTONIOLI "+
+								"SET ITEM_AVALAIBILITY= IFNULL((select s.ITEM_AVALAIBILITY "+
+								"FROM ST_ANTONIOLI_ITEMS s "+ 
+								"WHERE ANTONIOLI.ITEM_ID = s.ITEM_ID AND "+
+								"s.ITEM_AVALAIBILITY <> ANTONIOLI.ITEM_AVALAIBILITY "+
+								"),ANTONIOLI.ITEM_AVALAIBILITY) "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+ 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+") "+ 
+								"OR "+ 
+								"(STATUS="+StagingRecordStatus.MODIFIED+" " + 
+								"AND BUYMA_STATUS="+StagingBuymaStatus.PROCESSED+");";
+				if(logger!=null)
+					logger.log(Level.INFO, "Update ITEM_AVALAIBILITY of ANTONIOLI items where value changed from the staging.");
+				destinationSqlLiteDB.executeUpdate(sqlStatement);
+				 */	
+			}
 			if(logger!=null)
 				logger.log(Level.FINE, "End loadConsolidatedTable method.");
 		}
@@ -829,7 +898,17 @@ public class ManageAntonioli extends ManageVendor
 	            	"buy.\"つば\","+
 	            	"buy.\"直径\" "+
 	            	"FROM ANTONIOLI ant JOIN BUYMA_COLOR_SIZES buy ON ant.ITEM_ID = buy.商品管理番号  " + 
-	            	"WHERE ant.STATUS = "+StagingRecordStatus.DELETED+" "+
+	            	" AND buy.サイズ名称 = "+
+	            	" CASE "+
+	            	"  WHEN ant.ITEM_HIERARCHY2 = 'Size (EU)' THEN 'EU'||REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  WHEN ant.ITEM_HIERARCHY2 = 'Size (FRANCE)' THEN 'FR'||REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  WHEN ant.ITEM_HIERARCHY2 = 'Size (USA)' THEN 'US'||REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  WHEN ant.ITEM_HIERARCHY2 = 'Size (UK)' THEN 'UK'||REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  WHEN ant.ITEM_HIERARCHY2 = 'Size (ITALY)' THEN 'IT'||REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  WHEN ant.ITEM_HIERARCHY2 = 'Size (JAPAN)' THEN 'JP'||REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  ELSE REPLACE(ant.ITEM_SIZE,'½','.5') "+
+	            	"  END "+
+	             	"WHERE ant.STATUS = "+StagingRecordStatus.DELETED+" "+
 	                "AND ant.BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+";";
 			if(logger!=null)
 				logger.log(Level.INFO, "Insert into the table ANTONIOLI_COLOR_SIZES_TO_BUYMA items with 0 stock.");
@@ -837,6 +916,7 @@ public class ManageAntonioli extends ManageVendor
 			
 			//check if all sizes of an item have been deleted
 			//in that case we have to deactivate the item
+			/* at the moment deactivated 2020-04-21, Murakami way works
 			sqlStatement = " "+
 					"INSERT INTO ANTONIOLI_ITEMS_TO_BUYMA (" +
 					"\"商品ID\","+
@@ -1082,7 +1162,7 @@ public class ManageAntonioli extends ManageVendor
 			if(logger!=null)
 				logger.log(Level.INFO, "Create records into table ANTONIOLI_ITEMS_TO_BUYMA to stop items with all size at 0 stock.");
 			destinationSqlLiteDB.executeUpdate(sqlStatement);
-			
+			*/
 			//update the buyma status
 			Timestamp c = new Timestamp(System.currentTimeMillis());
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:sss");
@@ -1447,23 +1527,36 @@ public class ManageAntonioli extends ManageVendor
 					//new item found, check if it is processable
 					if(logger!=null)
 						logger.log(Level.FINE, "Start to process the item "+rs.getString("ITEM_SKU"));		
-					
+					/*
 					//check size
-					if(rs.getString("ITEM_HIERARCHY2").equals("SIZE (JEANS)"))
+					if(rs.getString("ITEM_HIERARCHY2").equals("Size (JEANS)") 
+							|| rs.getString("ITEM_HIERARCHY2").equals("Size (Scarpe)")
+							|| rs.getString("ITEM_HIERARCHY2").equals("Size (SHIRT NECK)"))
 					{
 						if(logger!=null)					
-							logger.log(Level.WARNING, "Size Jeans, not covered, the item will be marked as unprocessable.");
+							logger.log(Level.WARNING, "Size "+rs.getString("ITEM_HIERARCHY2")+" not covered, the item will be marked as unprocessable.");
+						
+						sqlStatement = "UPDATE ANTONIOLI "+
+								"SET BUYMA_STATUS_DESC= 'Size type "+rs.getString("ITEM_HIERARCHY2")+" not managed' "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
+								"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
+								"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
+						if(logger!=null)
+							logger.log(Level.INFO, "Update the record into the table ANTONIOLI as unprocessable.");
+						destinationSqlLiteDB.executeUpdate(sqlStatement);
+						
 						sqlStatement = "UPDATE ANTONIOLI "+
 								"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
 								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
 								"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
 								"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
 						if(logger!=null)
-							logger.log(Level.INFO, "Update the record into the tabel ANTONIOLI as unprocessable.");
+							logger.log(Level.INFO, "Update the record into the table ANTONIOLI as unprocessable with reason.");
 						destinationSqlLiteDB.executeUpdate(sqlStatement);
+										
 						continue;
 					}	
-					
+					*/
 					//BRAND
 					if(logger!=null)
 						logger.log(Level.FINE, "Look for the most suitable brand.");
@@ -1473,6 +1566,18 @@ public class ManageAntonioli extends ManageVendor
 						candidateBrandCode = "5041";
 						candidateBrandDesc = "Off-White";
 						candidateBrandDescJP = "オフホワイト";
+					}
+					else if(rs.getString("ITEM_BRAND").equals("Chloé"))
+					{
+						candidateBrandCode = "85";
+						candidateBrandDesc = "Chloe";
+						candidateBrandDescJP = "クロエ";
+					}
+					else if(rs.getString("ITEM_BRAND").contains("Comme Des Garçons"))
+					{
+						candidateBrandCode = "170";
+						candidateBrandDesc = "COMME des GARCONS";
+						candidateBrandDescJP = "コムデギャルソン";
 					}
 					else
 					{
@@ -1488,6 +1593,14 @@ public class ManageAntonioli extends ManageVendor
 						{
 							if(logger!=null)
 								logger.log(Level.WARNING, "No strong brand found as suitable, the item will be marked as unprocessable.");
+							
+							sqlStatement = "UPDATE ANTONIOLI "+
+									"SET BUYMA_STATUS_DESC= 'No strong suitable brand code found' "+
+									"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
+									"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
+									"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
+							destinationSqlLiteDB.executeUpdate(sqlStatement);
+							
 							sqlStatement = "UPDATE ANTONIOLI "+
 									"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
 									"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
@@ -1506,7 +1619,7 @@ public class ManageAntonioli extends ManageVendor
 					if(logger!=null)
 						logger.log(Level.FINE, "Retreive categories and look for the most suitable.");
 					
-					String g = (rs.getString("ITEM_GENDER")=="W") ? "WOMEN" : "MEN";
+					String g = ((rs.getString("ITEM_GENDER").trim()).equals("W")) ? "WOMEN" : "MEN";
 					
 					sqlStatement = "SELECT COUNT(*) FROM BUYMA_CATEGORY_ID_FROM_ANTONIOLI "+
 							"WHERE ANTONIOLI_GENDER='"+g+"' AND "+
@@ -1522,13 +1635,21 @@ public class ManageAntonioli extends ManageVendor
 						{	
 							if(logger!=null)
 								logger.log(Level.WARNING, "No category found, the item will be marked as unprocessable.");
+							
+							sqlStatement = "UPDATE ANTONIOLI "+
+									"SET BUYMA_STATUS_DESC= 'No category code found' "+
+									"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
+									"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
+									"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
+							destinationSqlLiteDB.executeUpdate(sqlStatement);
+							
 							sqlStatement = "UPDATE ANTONIOLI "+
 									"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
 									"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
 									"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
 									"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
 							if(logger!=null)
-								logger.log(Level.INFO, "Update the record into the tabel ANTONIOLI as unprocessable.");
+								logger.log(Level.INFO, "Update the record into the table ANTONIOLI as unprocessable.");
 							destinationSqlLiteDB.executeUpdate(sqlStatement);
 							continue;
 						}//if no category found
@@ -1609,12 +1730,19 @@ public class ManageAntonioli extends ManageVendor
 						if(logger!=null)
 							logger.log(Level.WARNING, "No category found, the item will be marked as unprocessable.");
 						sqlStatement = "UPDATE ANTONIOLI "+
+								"SET BUYMA_STATUS_DESC= 'No category code found' "+
+								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
+								"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
+								"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
+						destinationSqlLiteDB.executeUpdate(sqlStatement);
+						
+						sqlStatement = "UPDATE ANTONIOLI "+
 								"SET BUYMA_STATUS= "+StagingBuymaStatus.UNPROCESSABLE+" "+
 								"WHERE (STATUS="+StagingRecordStatus.NEW+" "+
 								"AND ITEM_SKU='"+rs.getString("ITEM_SKU")+"' "+
 								"AND BUYMA_STATUS="+StagingBuymaStatus.TO_BE_PROCESSED+");";
 						if(logger!=null)
-							logger.log(Level.INFO, "Update the record into the tabel ANTONIOLI as unprocessable.");
+							logger.log(Level.INFO, "Update the record into the table ANTONIOLI as unprocessable.");
 						destinationSqlLiteDB.executeUpdate(sqlStatement);
 						continue;
 					}
@@ -1629,16 +1757,19 @@ public class ManageAntonioli extends ManageVendor
 					String[] descriptions = rs.getString("ITEM_DESCRIPTION").split(" - ");
 					sqlStatement = "SELECT * FROM BUYMA_COLORS;";
 					ResultSet colors = destinationSqlLiteDB.executeSelect(sqlStatement);
-					while(colors.next())
+					if(descriptions.length > 1)
 					{
-						if(((descriptions[1].toUpperCase()).trim()).contains(colors.getString("COLOR_DESC")))
+						while(colors.next())
 						{
-							candidateColorCode = colors.getString("COLOR_BYUMA_CD");
-							candidateColorDesc = colors.getString("COLOR_DESC");
-							colorComment = "";
+							if(((descriptions[1].toUpperCase()).trim()).contains(colors.getString("COLOR_DESC")))
+							{
+								candidateColorCode = colors.getString("COLOR_BYUMA_CD");
+								candidateColorDesc = colors.getString("COLOR_DESC");
+								colorComment = "";
+							}
 						}
+						colors.close();
 					}
-					colors.close();
 					
 					//DESCRIPTION
 					candidateDesc = "ブランド： "+ candidateBrandDesc + " (" + candidateBrandDescJP + ")\n";
@@ -1885,37 +2016,30 @@ public class ManageAntonioli extends ManageVendor
 					destinationSqlLiteDB.executeUpdate(sqlStatement);
 				}//new item - header			
 				
-				candidateSizeDesc = "";
-				candidateSize = "";
+				//default code
+				candidateSizeDesc = "ONESIZE";
+				candidateSize = "0";
 				//look for size code
-				if(rs.getString("ITEM_HIERARCHY2").equals("Size (UNI)"))
-				{
-					candidateSizeDesc = "ONESIZE";
-					candidateSize = "0";
-				}
+									
+				String g = (rs.getString("ITEM_GENDER").equals("W")) ? "WOMEN" : "MEN";
+				sqlStatement = ""+
+						"SELECT DISTINCT BUYMA_SIZE, BUYMA_SIZE_DISPLAY "+
+						"FROM BUYMA_SIZE_ID_FROM_ANTONIOLI "+
+						"WHERE upper(ANTONIOLI_SIZE_CHART)=upper('"+rs.getString("ITEM_HIERARCHY2")+"') AND "+
+						"ANTONIOLI_SIZE='"+rs.getString("ITEM_SIZE")+"' AND "+
+						"ANTONIOLI_GENDER='"+g+"' ";
+				if(((rs.getString("ITEM_CATEGORY")).toUpperCase()).matches("BOOTS|FLATS|LACE-UPS|LOAFERS|PUMPS|SANDALS|SNEAKERS"))
+					sqlStatement = sqlStatement + 
+						"AND ANTONIOLI_CATEGORY='SHOES';";
 				else
+					sqlStatement = sqlStatement + 
+					"AND ANTONIOLI_CATEGORY='NO SHOES';";
+				ResultSet size = destinationSqlLiteDB.executeSelect(sqlStatement);
+				while(size.next())
 				{
-					
-					String g = (rs.getString("ITEM_GENDER")=="W") ? "WOMEN" : "MEN";
-					sqlStatement = ""+
-							"SELECT DISTINCT BUYMA_SIZE "+
-							"FROM BUYMA_SIZE_ID_FROM_ANTONIOLI "+
-							"WHERE upper(ANTONIOLI_SIZE_CHART)=upper('"+rs.getString("ITEM_HIERARCHY2")+"') AND "+
-							"ANTONIOLI_SIZE='"+rs.getString("ITEM_SIZE")+"' AND "+
-							"ANTONIOLI_GENDER='"+g+"' ";
-					if(((rs.getString("ITEM_CATEGORY")).toUpperCase()).matches("BOOTS|FLATS|LACE_UPS|LOAFERS|PUMPS|SANDALS|SNEAKERS"))
-						sqlStatement = sqlStatement + 
-							"AND ANTONIOLI_CATEGORY='SHOES';";
-					else
-						sqlStatement = sqlStatement + 
-						"AND ANTONIOLI_CATEGORY='NO SHOES';";
-					ResultSet size = destinationSqlLiteDB.executeSelect(sqlStatement);
-					while(size.next())
-					{
-						candidateSize = size.getString("BUYMA_SIZE");
-						candidateSizeDesc = size.getString("BUYMA_SIZE_DISPLAY");
-					}
-				}//else			
+					candidateSize = size.getString("BUYMA_SIZE");
+					candidateSizeDesc = size.getString("BUYMA_SIZE_DISPLAY");
+				}						
 				
 				//create record in ANTONIOLI_COLOR_SIZES_TO_BUYMA
 				sqlStatement = " "+
@@ -2070,8 +2194,6 @@ public class ManageAntonioli extends ManageVendor
 			if(destinationSqlLiteDB != null && destinationSqlLiteDB.isConnetionOpen())
 				destinationSqlLiteDB.closeDBConnection();
 		}		
-	}//loadBuyMaTable
-
-	
+	}//loadBuyMaTable	
 }//class
 
